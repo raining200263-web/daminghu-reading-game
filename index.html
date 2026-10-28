@@ -99,11 +99,11 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @media(prefers-reduced-motion:reduce){.answer-ripples span{animation:answerRippleFade .9s ease-out both}.large-coin{animation-duration:2.3s}}
 
 .dialog:has(.color-palette) .dialog-head{padding:18px 28px 10px}.dialog:has(.color-palette) .dialog-head h2{font-size:23px;margin:7px 0}.dialog:has(.color-palette) .dialog-body{padding:16px 28px}.dialog:has(.color-palette) .question-title{font-size:18px;margin-bottom:12px}.dialog:has(.color-palette) .palette-evidence{padding:8px 12px;font-size:14px}.dialog:has(.color-palette) .color-palette{margin:12px 0;gap:10px}.dialog:has(.color-palette) .paint-swatch{min-height:88px;padding:8px}.dialog:has(.color-palette) .paint-disc{width:46px;height:46px}.dialog:has(.color-palette) .mixing-row{padding:8px 0}.dialog:has(.color-palette) .dialog-foot{padding:12px 28px}
-#guideTarget,#observeBtn{overflow:hidden;isolation:isolate}
-#observeBtn{position:relative}
-#guideTarget:not(:disabled)::after,#observeBtn:not(:disabled)::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 32%,rgba(234,193,89,.1) 43%,rgba(255,229,153,.5) 50%,rgba(234,193,89,.1) 57%,transparent 68%);transform:translateX(-150%);animation:nextStepGlow 4s ease-in-out infinite;z-index:1}
-@keyframes nextStepGlow{0%,30%{transform:translateX(-150%)}75%,100%{transform:translateX(150%)}}
-@media(prefers-reduced-motion:reduce){#guideTarget:not(:disabled)::after,#observeBtn:not(:disabled)::after{animation:none;background:none;transform:none;border:2px solid #c6a359}}
+#guideTarget{overflow:visible;isolation:isolate}
+#guideTarget:not(:disabled)::after{content:"";position:absolute;inset:-3px;border:2px solid #d4b35b;border-radius:inherit;pointer-events:none;background:none;box-shadow:0 0 7px 2px rgba(230,195,97,.35),inset 0 0 4px rgba(255,229,153,.3);opacity:.3;animation:guideBorderGlow 2.8s ease-in-out infinite;z-index:1}
+@keyframes guideBorderGlow{0%,100%{opacity:.2}50%{opacity:.9}}
+#guideTarget.pressed::after{animation-play-state:paused;opacity:.9}
+@media(prefers-reduced-motion:reduce){#guideTarget:not(:disabled)::after{animation:none;opacity:.55}}
 </style>
 </head>
 <body>

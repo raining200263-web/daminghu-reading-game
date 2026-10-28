@@ -28,4 +28,26 @@ assert.equal(simulate(1,true,true,0).marked,0);
 assert.deepEqual(simulate(1,true,true,-.2),{lakeSunset:true,marked:1,lighting:1,narration:1});
 assert(js.includes('seeReflection(true);updateActivity();'));
 console.log('Passed: reflection requires 100% reveal and explicit completion.');
+const choiceCode=js.slice(js.indexOf('function shuffledChoices('),js.indexOf('\nfunction startQuiz('));
+const choiceAPI=new Function('esc',choiceCode+';return {shuffledChoices,optionsHTML};')(x=>String(x));
+const original=['甲','乙','丙','丁'],frozen=Object.freeze([...original]);
+const moved=choiceAPI.shuffledChoices(frozen,()=>0);
+assert.deepEqual(moved.map(x=>x.index),[1,2,3,0]);
+assert(moved.every(x=>x.value===original[x.index]));
+assert.deepEqual(frozen,original);
+const arrangements=new Set();
+for(let i=0;i<60;i++){
+ const list=choiceAPI.shuffledChoices(frozen);
+ assert.deepEqual(list.map(x=>x.index).sort(),[0,1,2,3]);
+ assert(list.every(x=>x.value===original[x.index]));arrangements.add(list.map(x=>x.index).join(','));
+ const rendered=choiceAPI.optionsHTML(frozen);
+ const answers=[...rendered.matchAll(/data-answer="(\d+)"[^>]*><span class="letter">([A-D])<\/span><span>(.*?)<\/span>/g)];
+ assert.equal(answers.length,4);
+ answers.forEach((m,position)=>{assert.equal(m[2],String.fromCharCode(65+position));assert.equal(m[3],original[Number(m[1])]);});
+}
+assert(arrangements.size>1);
+assert.equal(choiceAPI.shuffledChoices([]).length,0);
+assert.deepEqual(choiceAPI.shuffledChoices(['單一']),[{value:'單一',index:0}]);
+assert(!data.questions[11].explain.includes('圖 B'));
+console.log('Passed: shuffled display order preserves original answer IDs, text and A–D labels.');
 

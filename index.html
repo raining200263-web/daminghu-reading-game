@@ -506,7 +506,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
    ],
    "answer": 1,
    "hint": "屏風是可以立在地上、用來分隔或遮擋空間的陳設，常有數片相連的畫屏。",
-   "explain": "圖 B 是能落地站立、由數片相連的屏風。圖 A 是掛在牆上的直式掛軸，有吊繩與上下軸桿；圖 C 是桌子，圖 D 是窗戶。原文以屏風比喻山景連綿鋪展、氣勢雄偉。"
+   "explain": "能落地站立、由數片相連的是屏風。其他示意圖分別是掛在牆上的直式掛軸（有吊繩與上下軸桿）、桌子與窗戶。原文以屏風比喻山景連綿鋪展、氣勢雄偉。"
   },
   {
    "id": 13,
@@ -988,8 +988,13 @@ function menu(){
 function exportSave(){download('大明湖-旅程存檔.json','application/json',JSON.stringify(state,null,2));toast('已匯出存檔，請保留這份檔案。');}
 function download(name,type,body){const blob=new Blob([body],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);}
 $('importFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(f.size>200000){toast('檔案過大，請選擇遊戲匯出的 JSON 存檔。');return;}try{const s=JSON.parse(await f.text());if(!validSave(s))throw Error();progressUpdated=false;state=upgradeSave(s);save();AudioEngine.mute(state.settings.muted);closeModal();if(!playing){$('entry').classList.add('hidden');$('hud').classList.remove('hidden');await AudioEngine.start();}loadStage(state.stage);playing=true;renderDialogue();toast(progressUpdated?'已保留原進度；新增的旅程與題目可接著體驗。':'已讀取旅程存檔。');progressUpdated=false;}catch{toast('存檔格式不符，原本的進度仍保留。');}};
+function shuffledChoices(values,rng=Math.random){
+ const entries=values.map((value,index)=>({value,index}));
+ for(let i=entries.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[entries[i],entries[j]]=[entries[j],entries[i]];}
+ return entries;
+}
 function optionsHTML(options,multiple=false,kind='main'){
- return '<div class="answers">'+options.map((o,i)=>'<button class="answer" data-answer="'+i+'" data-kind="'+kind+'" aria-pressed="false"><span class="letter">'+(multiple?'□':String.fromCharCode(65+i))+'</span><span>'+esc(o)+'</span></button>').join('')+'</div>';
+ return '<div class="answers">'+shuffledChoices(options).map(({value:o,index:i},position)=>'<button class="answer" data-answer="'+i+'" data-kind="'+kind+'" aria-pressed="false"><span class="letter">'+(multiple?'□':String.fromCharCode(65+position))+'</span><span>'+esc(o)+'</span></button>').join('')+'</div>';
 }
 function startQuiz(){
  if(isStage('arrival')&&state.intro.phase!=='city'){toast('請先坐車抵達濟南府，按前進入城觀察。');return;}
@@ -1011,16 +1016,16 @@ function showQuestion(q,context='quiz'){
  let html='<div style="margin-bottom:17px"><span class="pill">PIRLS・'+q.level+'</span><span class="pill">'+types[q.type]+'</span></div><p class="question-title">'+esc(q.title)+'</p>';
  if(q.review)html+='<p class="review-intro">這一題，請運用已學過的對聯要點。答錯後會給提示，再試一次。</p>';
  if(q.display)html+='<div class="muted" style="text-align:center">面對亭門・請判斷這種貼法</div><div class="couplet-display" aria-label="待判斷的貼聯示意"><div class="couplet-scroll"><small>左側</small><p>'+esc(q.display.left)+'</p></div><div class="couplet-scroll"><small>右側</small><p>'+esc(q.display.right)+'</p></div></div>';
- if(q.type==='couplet')html+='<p class="muted">① 點選要放置的位置　② 點選下方聯句　③ 完成兩側後送出</p><div class="couplet-display"><button class="couplet-scroll" data-couplet-slot="1"><small>下聯・面對亭門左側</small><p id="slot1">點這裡，再選聯句</p></button><button class="couplet-scroll" data-couplet-slot="0"><small>上聯・面對亭門右側</small><p id="slot0">點這裡，再選聯句</p></button></div><div class="answers">'+[1,0].map(n=>'<button class="answer" data-couplet-card="'+n+'">'+esc(q.options[n])+'</button>').join('')+'</div>';
+ if(q.type==='couplet')html+='<p class="muted">① 點選要放置的位置　② 點選下方聯句　③ 完成兩側後送出</p><div class="couplet-display"><button class="couplet-scroll" data-couplet-slot="1"><small>下聯・面對亭門左側</small><p id="slot1">點這裡，再選聯句</p></button><button class="couplet-scroll" data-couplet-slot="0"><small>上聯・面對亭門右側</small><p id="slot0">點這裡，再選聯句</p></button></div><div class="answers">'+shuffledChoices([0,1]).map(({value:n})=>'<button class="answer" data-couplet-card="'+n+'">'+esc(q.options[n])+'</button>').join('')+'</div>';
  if(['single','multi','tf','puzzle','evidence'].includes(q.type))html+=optionsHTML(q.type==='tf'?['是','非']:q.options,['multi','puzzle'].includes(q.type));
  if(q.type==='palette')html+=paletteHTML(q);
- if(q.type==='clock')html+='<div class="image-answers">'+q.options.map((o,i)=>'<button class="answer image-answer" data-answer="'+i+'" data-kind="main" aria-pressed="false">'+clockIllustration(q.hours[i],o)+'<span class="clock-label">'+esc(o)+'</span></button>').join('')+'</div>';
- if(q.type==='image')html+='<div class="image-answers">'+q.options.map((o,i)=>'<button class="answer image-answer" data-answer="'+i+'" data-kind="main" aria-pressed="false">'+screenIllustration(i)+'<span>'+esc(o)+'</span></button>').join('')+'</div>';
+ if(q.type==='clock')html+='<div class="image-answers">'+shuffledChoices(q.options).map(({value:o,index:i})=>'<button class="answer image-answer" data-answer="'+i+'" data-kind="main" aria-pressed="false">'+clockIllustration(q.hours[i],o)+'<span class="clock-label">'+esc(o)+'</span></button>').join('')+'</div>';
+ if(q.type==='image')html+='<div class="image-answers">'+shuffledChoices(q.options).map(({index:i},position)=>'<button class="answer image-answer" data-answer="'+i+'" data-kind="main" aria-pressed="false">'+screenIllustration(i)+'<span>圖 '+String.fromCharCode(65+position)+'</span></button>').join('')+'</div>';
  if(q.type==='technique')html+='<fieldset><legend>（一）寫作手法（選一項）</legend>'+optionsHTML(q.options,false)+'</fieldset><fieldset><legend>（二）修辭技巧（可複選）</legend>'+optionsHTML(q.techniques,true,'technique')+'</fieldset>';
  if(q.type==='fill')html+='<label for="fillAnswer" class="muted">請填入原文詞語</label><br><input class="form-input" id="fillAnswer" autocomplete="off" maxlength="20" placeholder="在這裡填入答案">';
- if(q.type==='match')html+=q.left.map((l,i)=>'<div class="match-row"><label for="match'+i+'">'+esc(l)+'</label><select id="match'+i+'" data-match="'+i+'"><option value="-1">選擇配對項目</option>'+q.right.map((r,j)=>'<option value="'+j+'">'+esc(r)+'</option>').join('')+'</select></div>').join('');
+ if(q.type==='match')html+=q.left.map((l,i)=>'<div class="match-row"><label for="match'+i+'">'+esc(l)+'</label><select id="match'+i+'" data-match="'+i+'"><option value="-1">選擇配對項目</option>'+shuffledChoices(q.right).map(({value:r,index:j})=>'<option value="'+j+'">'+esc(r)+'</option>').join('')+'</select></div>').join('');
  if(q.map)html+=routeMapHTML();
- if(q.type==='sort')html+='<div class="sort-slots" id="sortSlots"><span class="muted">依序點按下方卡片</span></div><div class="sort-pool" id="sortPool">'+q.options.map((o,i)=>'<button data-sort="'+i+'">'+esc(o)+'</button>').join('')+'</div>';
+ if(q.type==='sort')html+='<div class="sort-slots" id="sortSlots"><span class="muted">依序點按下方卡片</span></div><div class="sort-pool" id="sortPool">'+shuffledChoices(q.options).map(({value:o,index:i})=>'<button data-sort="'+i+'">'+esc(o)+'</button>').join('')+'</div>';
  if(q.type==='puzzle')html+='<p class="muted" style="margin-top:22px">這條「絨毯」比喻的是：</p>'+optionsHTML(q.objects,false,'extra');
  if(q.type==='evidence')html+='<p class="muted" style="margin-top:22px">支持我的判斷的理由：</p>'+optionsHTML(q.reasons,false,'extra');
  html+='<div id="feedback" class="hidden" aria-live="polite"></div>';
@@ -1683,7 +1688,7 @@ function updatePaymentDisplay(){
  if(!visible)return;if(!panel.dataset.ready){panel.dataset.ready='true';panel.innerHTML='<strong>開發車價＝支付車價</strong><div class="payment-transfer"><span>我・老殘</span><div class="coin-lane">'+[0,1,2].map(i=>'<div class="large-coin" style="--delay:'+i*.22+'s">'+paymentCoinSVG()+'</div>').join('')+'</div><span>車夫</span></div><p>把銅錢交給車夫，支付車價與酒錢。</p>';}
 }
 function paletteHTML(q){
- return '<div class="palette-evidence">「一片白花映着帶水氣的斜陽，好似一條粉紅絨毯」</div><p>從調色盤點選<strong>兩種顏色</strong>，想想白色蘆花受到什麼顏色的夕陽映照。</p><div class="color-palette">'+q.options.map((name,i)=>'<button class="paint-swatch" data-color="'+i+'" aria-pressed="false"><span class="paint-disc" style="--paint:'+q.colors[i]+'"></span><span>'+esc(name)+'</span></button>').join('')+'</div><div class="mixing-row"><span id="mixA" class="mix-dab">？</span><b>＋</b><span id="mixB" class="mix-dab">？</span><b>＝</b><span id="mixResult" class="mix-result">選兩色，看看結果</span></div>';
+ return '<div class="palette-evidence">「一片白花映着帶水氣的斜陽，好似一條粉紅絨毯」</div><p>從調色盤點選<strong>兩種顏色</strong>，想想白色蘆花受到什麼顏色的夕陽映照。</p><div class="color-palette">'+shuffledChoices(q.options).map(({value:name,index:i})=>'<button class="paint-swatch" data-color="'+i+'" aria-pressed="false"><span class="paint-disc" style="--paint:'+q.colors[i]+'"></span><span>'+esc(name)+'</span></button>').join('')+'</div><div class="mixing-row"><span id="mixA" class="mix-dab">？</span><b>＋</b><span id="mixB" class="mix-dab">？</span><b>＝</b><span id="mixResult" class="mix-result">選兩色，看看結果</span></div>';
 }
 function mixedColor(a,b){const out=[1,3,5].map(i=>Math.round((parseInt(a.slice(i,i+2),16)+parseInt(b.slice(i,i+2),16))/2).toString(16).padStart(2,'0'));return '#'+out.join('');}
 function wirePalette(q){

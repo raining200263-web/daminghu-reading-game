@@ -1277,7 +1277,20 @@ function carriage(){
 }
 function ground(w,d,x,z,color='#c9cbb1'){return box(w,.3,d,color,x,-.1,z);}
 function paving(w,d,x,z){
- ground(w,d,x,z,'#bfc3ad');const lines=[],step=1.2;for(let xx=-w/2;xx<=w/2;xx+=step)lines.push(x+xx,.061,z-d/2,x+xx,.061,z+d/2);for(let zz=-d/2;zz<=d/2;zz+=step)lines.push(x-w/2,.063,z+zz,x+w/2,.063,z+zz);root.add(new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(lines,3)),new THREE.LineBasicMaterial({color:'#929e88',transparent:true,opacity:.3})));
+ // Terrain tops out at y=.05. Keep the paving above it, and filter the
+ // joints as a texture so distant one-pixel lines do not shimmer on movement.
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=256;
+ const ctx=canvas.getContext('2d');ctx.fillStyle='#bfc3ad';ctx.fillRect(0,0,256,256);
+ ctx.strokeStyle='rgba(146,158,136,.3)';ctx.lineWidth=3;ctx.strokeRect(0,0,256,256);
+ const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(w/1.2,d/1.2);
+ texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
+ texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+ // Give crossing paths a deterministic depth offset as well.
+ const layer=root.userData.pavingLayer=(root.userData.pavingLayer||0)+1;
+ const material=new THREE.MeshStandardMaterial({map:texture,roughness:1,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-layer});
+ const path=mesh(new THREE.PlaneGeometry(w,d),material,x,.065,z);
+ path.rotation.x=-Math.PI/2;path.renderOrder=layer;
 }
 function makeGuideBell(parent){
  const g=new THREE.Group();parent.add(g);const bronze=new THREE.MeshStandardMaterial({color:'#c9a453',metalness:.42,roughness:.45});
